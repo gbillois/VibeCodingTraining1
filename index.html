@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cyber Serpent | Skills Validation</title>
+  <style>
+    :root { --ink:#e9fff7; --muted:#89a99e; --green:#39ff9c; --cyan:#52ddff; --panel:#0b1b1a; --line:#1e423b; --danger:#ff647c; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; color:var(--ink); background:#03100f; font:500 15px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; overflow-x:hidden; }
+    body::before { content:""; position:fixed; inset:0; pointer-events:none; background:linear-gradient(rgba(57,255,156,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(57,255,156,.035) 1px,transparent 1px); background-size:32px 32px; mask-image:linear-gradient(to bottom,black,transparent 90%); }
+    .shell { width:min(1100px,calc(100% - 32px)); margin:auto; padding:30px 0 40px; position:relative; }
+    header { display:flex; align-items:flex-end; justify-content:space-between; gap:24px; margin-bottom:24px; }
+    .eyebrow { color:var(--green); text-transform:uppercase; letter-spacing:.18em; font-size:12px; }
+    h1 { font:800 clamp(30px,5vw,56px)/1 system-ui,sans-serif; letter-spacing:-.055em; margin:7px 0 0; }
+    h1 span { color:var(--green); text-shadow:0 0 24px rgba(57,255,156,.35); }
+    .status-dot { color:var(--muted); white-space:nowrap; }
+    .status-dot::before { content:""; display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 10px var(--green); margin-right:8px; }
+    .layout { display:grid; grid-template-columns:minmax(0,1fr) 280px; gap:20px; }
+    .panel { border:1px solid var(--line); background:rgba(7,24,22,.9); box-shadow:0 20px 70px #0008; }
+    .game-panel { padding:14px; position:relative; }
+    .game-top { display:flex; justify-content:space-between; color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.1em; padding:0 4px 11px; }
+    canvas { display:block; width:100%; aspect-ratio:1; background:#061513; border:1px solid #173b34; }
+    .start-screen { position:absolute; inset:48px 14px 14px; display:grid; place-items:center; text-align:center; padding:30px; background:rgba(3,16,15,.88); backdrop-filter:blur(4px); }
+    .start-screen.hidden { display:none; }
+    .start-screen h2 { font:800 clamp(26px,4vw,42px)/1.05 system-ui,sans-serif; margin:10px 0; }
+    .start-screen p { max-width:430px; color:var(--muted); margin:0 auto 22px; }
+    button { font:700 14px ui-monospace,monospace; cursor:pointer; }
+    .primary { padding:13px 22px; color:#02120d; background:var(--green); border:0; box-shadow:0 0 24px #39ff9c44; }
+    .primary:hover { background:#83ffc1; }
+    aside { display:flex; flex-direction:column; gap:14px; }
+    .card { padding:20px; }
+    .card-label { color:var(--muted); text-transform:uppercase; font-size:11px; letter-spacing:.15em; }
+    .big-score { font:800 42px/1 system-ui,sans-serif; margin:9px 0 3px; }
+    .progress { display:flex; gap:5px; margin-top:15px; }
+    .progress i { height:5px; flex:1; background:#17332e; }
+    .progress i.done { background:var(--green); box-shadow:0 0 8px #39ff9c88; }
+    .topics { display:grid; gap:12px; margin-top:15px; }
+    .topic { display:flex; justify-content:space-between; border-bottom:1px solid #17332e; padding-bottom:9px; }
+    .topic:last-child { border:0; padding:0; }
+    kbd { border:1px solid #375a53; border-bottom-width:2px; padding:2px 6px; color:var(--ink); background:#102622; }
+    .help { color:var(--muted); font-size:12px; }
+    .mobile-controls { display:none; grid-template-columns:repeat(3,52px); justify-content:center; margin-top:12px; gap:5px; }
+    .mobile-controls button { height:46px; color:var(--ink); border:1px solid var(--line); background:#102622; }
+    .mobile-controls .up { grid-column:2; } .mobile-controls .left { grid-column:1; grid-row:2; } .mobile-controls .down { grid-column:2; } .mobile-controls .right { grid-column:3; grid-row:2; }
+    .modal { position:fixed; inset:0; z-index:10; display:none; place-items:center; padding:20px; background:rgba(1,8,7,.87); backdrop-filter:blur(7px); }
+    .modal.open { display:grid; }
+    .dialog { width:min(650px,100%); padding:28px; border:1px solid #2e6156; background:#091b19; box-shadow:0 0 80px #39ff9c18; }
+    .question-meta { display:flex; justify-content:space-between; color:var(--green); text-transform:uppercase; letter-spacing:.12em; font-size:11px; }
+    .dialog h2 { font:750 clamp(21px,4vw,30px)/1.25 system-ui,sans-serif; margin:18px 0 22px; letter-spacing:-.02em; }
+    .answers { display:grid; gap:10px; }
+    .answer { text-align:left; padding:14px 16px; color:var(--ink); border:1px solid #285047; background:#0e2622; }
+    .answer:hover,.answer:focus { border-color:var(--green); outline:none; transform:translateX(3px); }
+    .answer.correct { border-color:var(--green); background:#103d2d; } .answer.wrong { border-color:var(--danger); background:#381923; }
+    .feedback { min-height:24px; margin:16px 0 0; color:var(--muted); }
+    .feedback strong { color:var(--ink); }
+    .next { display:none; margin-top:13px; }
+    .result-icon { color:var(--green); font-size:40px; }
+    @media (max-width:780px) { .layout{grid-template-columns:1fr}.layout aside{display:grid;grid-template-columns:1fr 1fr}.help-card{display:none}.mobile-controls{display:grid} header{align-items:flex-start;flex-direction:column;gap:10px} }
+    @media (max-width:480px) { .shell{width:min(100% - 18px,1100px);padding-top:18px}.layout aside{grid-template-columns:1fr}.dialog{padding:20px}.card{padding:15px} }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header><div><div class="eyebrow">// Academy assessment protocol</div><h1>CYBER_<span>SERPENT</span></h1></div><div class="status-dot" id="systemStatus">SYSTEM READY</div></header>
+    <div class="layout">
+      <section class="panel game-panel" aria-label="Snake game">
+        <div class="game-top"><span>Training grid 20 × 20</span><span id="liveState">Awaiting input</span></div>
+        <canvas id="game" width="600" height="600"></canvas>
+        <div class="start-screen" id="startScreen"><div><div class="eyebrow">10 challenges · 4 domains</div><h2 id="startTitle">Prove your cyber instincts.</h2><p id="startCopy">Collect data nodes, answer the security challenge, and keep moving. Ten correct decisions validate your skills.</p><button class="primary" id="startBtn">INITIALIZE RUN →</button></div></div>
+        <div class="mobile-controls" aria-label="Touch direction controls"><button class="up" data-dir="up">▲</button><button class="left" data-dir="left">◀</button><button class="down" data-dir="down">▼</button><button class="right" data-dir="right">▶</button></div>
+      </section>
+      <aside>
+        <section class="panel card"><div class="card-label">Validation score</div><div class="big-score"><span id="score">0</span><small>/10</small></div><div class="progress" id="progress" aria-label="Assessment progress"></div></section>
+        <section class="panel card"><div class="card-label">Knowledge domains</div><div class="topics"><div class="topic"><span>IAM</span><span>Identity</span></div><div class="topic"><span>GRC</span><span>Governance</span></div><div class="topic"><span>SOC</span><span>Operations</span></div><div class="topic"><span>AI</span><span>Security</span></div></div></section>
+        <section class="panel card help-card"><div class="card-label">Controls</div><p class="help"><kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> or <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd><br><br>Collect the pulsing data node. The grid pauses during every challenge.</p></section>
+      </aside>
+    </div>
+  </main>
+  <div class="modal" id="questionModal" role="dialog" aria-modal="true" aria-labelledby="questionText"><div class="dialog"><div class="question-meta"><span id="questionDomain"></span><span id="questionNumber"></span></div><h2 id="questionText"></h2><div class="answers" id="answers"></div><p class="feedback" id="feedback" aria-live="polite"></p><button class="primary next" id="nextBtn">CONTINUE RUN →</button></div></div>
+  <div class="modal" id="resultModal" role="dialog" aria-modal="true" aria-labelledby="resultTitle"><div class="dialog" style="text-align:center"><div class="result-icon" id="resultIcon">✓</div><div class="eyebrow">Assessment complete</div><h2 id="resultTitle"></h2><p id="resultCopy" style="color:var(--muted)"></p><button class="primary" id="restartBtn">RUN NEW ASSESSMENT →</button></div></div>
+  <script>
+    const bank = [
+      ['IAM','What is the strongest way to protect an administrator account?',['Use a long password shared by the admin team','Use a unique password and SMS verification','Use a unique password with phishing-resistant MFA'],2,'Phishing-resistant MFA adds strong proof of possession and resists credential replay.'],
+      ['IAM','What does the principle of least privilege require?',['Give everyone read access by default','Give users standard access plus temporary admin rights','Grant only the access needed for the task and duration'],2,'Least privilege limits both the scope and duration of access.'],
+      ['IAM','When should a departing employee’s access be revoked?',['At the next quarterly access review','By the end of their final working day','At the effective time of termination, coordinated with HR'],2,'Revocation should align precisely with the effective termination time.'],
+      ['IAM','What is the primary purpose of single sign-on (SSO)?',['Make one password usable on unrelated personal sites','Centralize authentication while each app keeps separate policies','Let users authenticate once to access approved connected services'],2,'SSO provides one controlled authentication session across approved services.'],
+      ['IAM','Which access model assigns permissions based on job functions?',['Discretionary access control','Attribute-based access control using department only','Role-based access control'],2,'RBAC maps permissions to defined organizational roles.'],
+      ['IAM','What is a good practice for service accounts?',['Allow interactive login for easier troubleshooting','Rotate passwords annually and share them with developers','Disable interactive login and manage credentials in a secrets vault'],2,'Service accounts should be non-interactive and use centrally managed secrets.'],
+      ['IAM','Why perform periodic access reviews?',['To make all users reset passwords','To review only accounts that have never logged in','To confirm access remains appropriate and remove entitlement creep'],2,'Reviews find obsolete or excessive access accumulated over time.'],
+      ['IAM','What is just-in-time privileged access?',['Permanent admin access activated by a password','Admin access granted for a working day after manager approval','Time-limited elevated access issued when a verified need arises'],2,'JIT access removes standing privilege and tightly limits exposure.'],
+      ['GRC','What is the first step in managing cyber risk?',['Buy the most popular security tool','List threats without considering business assets','Identify assets, threats, vulnerabilities, likelihood, and impact'],2,'Risk assessment connects threats and weaknesses to business impact.'],
+      ['GRC','What does a risk register contain?',['Only vulnerabilities found by scanners','Risks and their owners, reviewed once at project launch','Documented risks, owners, ratings, treatments, and review status'],2,'A useful register tracks ownership and treatment throughout the risk lifecycle.'],
+      ['GRC','What is risk acceptance?',['Ignoring a risk because remediation is expensive','Acknowledging a risk informally and monitoring it','An authorized, documented decision to retain a known residual risk'],2,'Acceptance is a deliberate decision made by the proper risk owner.'],
+      ['GRC','Why map security controls to a framework?',['To guarantee the organization cannot be breached','To use a checklist as a substitute for risk analysis','To organize coverage, reveal gaps, and demonstrate alignment'],2,'Framework mapping makes control coverage consistent and auditable.'],
+      ['GRC','What is the purpose of a business impact analysis?',['Calculate the security team’s annual budget','Rank applications by how many users they have','Determine disruption impacts and recovery priorities for critical processes'],2,'A BIA connects outages to business consequences and recovery needs.'],
+      ['GRC','What is residual risk?',['Risk that exists before any controls are applied','Risk transferred entirely to a cyber insurer','Risk remaining after controls and treatments are applied'],2,'Controls reduce risk, but some residual exposure generally remains.'],
+      ['GRC','What makes a security policy effective?',['It contains highly technical configuration commands','It is approved and published on the intranet','It is approved, communicated, enforced, and regularly reviewed'],2,'A policy must be understood, operated, and maintained—not merely published.'],
+      ['GRC','What should happen when a control exception is approved?',['The control should be permanently deleted','The exception should remain until someone notices it','It should have an owner, rationale, compensating controls, and expiry'],2,'Time-bound, owned exceptions prevent temporary gaps from becoming permanent.'],
+      ['SOC','What should an analyst do first after receiving a high-severity alert?',['Immediately wipe the affected host','Check the alert title and escalate it unchanged','Validate the alert and gather context using the response playbook'],2,'Triage begins by confirming evidence and context through defined procedures.'],
+      ['SOC','What is the difference between an event and an incident?',['Every logged event is an incident','An incident is any event marked high severity by a tool','An incident is an event or events that threaten security and require response'],2,'Events become incidents when analysis shows meaningful security impact.'],
+      ['SOC','Why preserve chain of custody?',['To compress evidence before storage','To record only who originally collected evidence','To document evidence handling so its integrity and provenance are defensible'],2,'Chain of custody records each transfer and protects evidentiary integrity.'],
+      ['SOC','What is the goal of containment during incident response?',['Erase all evidence of the attack','Block every external IP address','Limit damage and spread while preserving evidence and business needs'],2,'Containment balances stopping harm with investigation and continuity.'],
+      ['SOC','Which data best supports detection of suspicious lateral movement?',['Public website access logs only','Endpoint antivirus alerts without timestamps','Correlated identity, endpoint, and internal network telemetry'],2,'Multiple correlated sources reveal movement more reliably than one alert stream.'],
+      ['SOC','What does a SIEM primarily provide?',['Automatic prevention of every cyberattack','Central storage of logs for compliance only','Centralized collection, correlation, search, and alerting on security data'],2,'A SIEM makes distributed telemetry searchable and supports detection.'],
+      ['SOC','Why tune a detection rule?',['To eliminate all alerts from the rule','To reduce alert volume regardless of missed attacks','To improve signal quality while measuring false positives and coverage'],2,'Tuning must balance analyst load with detection effectiveness.'],
+      ['SOC','What belongs in an incident postmortem?',['The name of the person to blame','Only a timeline written by the incident commander','Root causes, response lessons, owners, and tracked corrective actions'],2,'Blameless, actionable reviews drive measurable improvements.'],
+      ['AI Security','What is prompt injection?',['A method for speeding up model inference','A malformed prompt that always crashes a model','Input crafted to make an AI ignore intended instructions or misuse tools/data'],2,'Prompt injection attempts to override the system’s intended control hierarchy.'],
+      ['AI Security','How should sensitive data be handled before using a public AI tool?',['Paste it in if the chat will later be deleted','Replace names but retain all other confidential details','Follow approved policy; minimize, redact, or avoid sending sensitive data'],2,'Deletion or simple pseudonyms do not replace approved data-handling controls.'],
+      ['AI Security','What is an AI hallucination?',['A deliberate cyberattack performed by a model','Any response that uses probabilistic language','Plausible-looking output that is unsupported or factually incorrect'],2,'Hallucinations sound credible but lack grounding in reliable evidence.'],
+      ['AI Security','How can an application reduce insecure AI output handling?',['Trust model output because it passed a safety filter','Remove HTML tags from output and then execute it','Treat output as untrusted; validate and encode it for its destination'],2,'Model output requires contextual validation just like other untrusted input.'],
+      ['AI Security','What is the safest approach when an AI agent can call tools?',['Give it administrator access so tasks never fail','Allow all read-only tools without monitoring','Use allowlisted tools, least privilege, approvals, and audit logs'],2,'Agentic systems need constrained capability, oversight, and traceability.'],
+      ['AI Security','Why monitor an AI model after deployment?',['To ensure it always gives identical answers','To track uptime and token cost only','To detect drift, abuse, quality failures, and changing security risks'],2,'Ongoing monitoring covers behavior and risk, not just availability.']
+    ];
+    const canvas=document.querySelector('#game'),ctx=canvas.getContext('2d'),modal=document.querySelector('#questionModal');
+    const grid=20,cell=canvas.width/grid; let snake,food,dir,nextDir,timer,running=false,paused=false,selected=[],qIndex=0,correct=0;
+    const $=s=>document.querySelector(s);
+    function shuffle(a){return [...a].sort(()=>Math.random()-.5)}
+    function reset(){ snake=[{x:9,y:10},{x:8,y:10},{x:7,y:10}]; dir=nextDir={x:1,y:0}; selected=shuffle(bank).slice(0,10); qIndex=correct=0; placeFood(); updateUI(); draw(); }
+    function placeFood(){ do{food={x:Math.floor(Math.random()*grid),y:Math.floor(Math.random()*grid)}}while(snake.some(s=>s.x===food.x&&s.y===food.y)); }
+    function start(){ reset(); $('#startScreen').classList.add('hidden'); $('#resultModal').classList.remove('open'); running=true; paused=false; $('#systemStatus').textContent='ASSESSMENT ACTIVE'; $('#liveState').textContent='Run active'; clearInterval(timer); timer=setInterval(tick,125); }
+    function tick(){ if(!running||paused)return; dir=nextDir; const head={x:snake[0].x+dir.x,y:snake[0].y+dir.y}; if(head.x<0||head.y<0||head.x>=grid||head.y>=grid||snake.some(s=>s.x===head.x&&s.y===head.y)){ failRun();return } snake.unshift(head); if(head.x===food.x&&head.y===food.y){ paused=true; draw(); ask(); }else snake.pop(); draw(); }
+    function draw(){ ctx.fillStyle='#061513';ctx.fillRect(0,0,600,600);ctx.strokeStyle='#0d2823';ctx.lineWidth=1;for(let i=1;i<grid;i++){ctx.beginPath();ctx.moveTo(i*cell,0);ctx.lineTo(i*cell,600);ctx.stroke();ctx.beginPath();ctx.moveTo(0,i*cell);ctx.lineTo(600,i*cell);ctx.stroke()} const pulse=3+Math.sin(Date.now()/150)*2;ctx.fillStyle='#52ddff';ctx.shadowColor='#52ddff';ctx.shadowBlur=15+pulse;ctx.fillRect(food.x*cell+7,food.y*cell+7,cell-14,cell-14);ctx.shadowBlur=0;snake.forEach((s,i)=>{ctx.fillStyle=i===0?'#9fffc9':`rgba(57,255,156,${Math.max(.35,1-i*.035)})`;ctx.fillRect(s.x*cell+2,s.y*cell+2,cell-4,cell-4)}); }
+    function ask(){ const q=selected[qIndex]; $('#questionDomain').textContent=q[0]+' // CHALLENGE';$('#questionNumber').textContent=`${String(qIndex+1).padStart(2,'0')} / 10`;$('#questionText').textContent=q[1];$('#feedback').textContent='';$('#nextBtn').style.display='none';const order=shuffle(q[2].map((text,i)=>({text,correct:i===q[3]})));$('#answers').innerHTML='';order.forEach(o=>{const b=document.createElement('button');b.className='answer';b.textContent=o.text;b.onclick=()=>answer(b,o.correct,q[4]);$('#answers').append(b)});modal.classList.add('open');$('#liveState').textContent='Challenge paused';setTimeout(()=>$('#answers button').focus(),50); }
+    function answer(button,isCorrect,explanation){ [...document.querySelectorAll('.answer')].forEach(b=>b.disabled=true);button.classList.add(isCorrect?'correct':'wrong');if(isCorrect)correct++; else [...document.querySelectorAll('.answer')].find(b=>selected[qIndex][2][selected[qIndex][3]]===b.textContent)?.classList.add('correct');$('#feedback').innerHTML=`<strong>${isCorrect?'Correct.':'Not quite.'}</strong> ${explanation}`;qIndex++;updateUI();$('#nextBtn').textContent=qIndex===10?'VIEW RESULTS →':'CONTINUE RUN →';$('#nextBtn').style.display='inline-block';$('#nextBtn').focus(); }
+    function proceed(){modal.classList.remove('open');if(qIndex===10){endAssessment();return}snake.pop();placeFood();paused=false;$('#liveState').textContent='Run active';}
+    function updateUI(){ $('#score').textContent=correct;$('#progress').innerHTML=Array.from({length:10},(_,i)=>`<i class="${i<qIndex?'done':''}"></i>`).join(''); }
+    function endAssessment(){running=false;clearInterval(timer);const passed=correct>8;$('#resultIcon').textContent=passed?'✓':'↻';$('#resultTitle').textContent=passed?'Skills validated':`${correct}/10 — Keep training`;$('#resultCopy').textContent=passed?`Excellent work. You scored ${correct}/10 and demonstrated strong judgment across the cyber domains.`:`You scored ${correct}/10. Review the challenge feedback and run another randomized assessment.`;$('#resultModal').classList.add('open');$('#systemStatus').textContent=passed?'SKILLS VALIDATED':'REVIEW REQUIRED';$('#liveState').textContent='Assessment complete'; }
+    function failRun(){running=false;clearInterval(timer);$('#startTitle').textContent='Connection terminated.';$('#startCopy').textContent=`You hit the perimeter after ${qIndex} challenge${qIndex===1?'':'s'}. Reinitialize for a fresh set of 10 questions.`;$('#startBtn').textContent='REINITIALIZE →';$('#startScreen').classList.remove('hidden');$('#systemStatus').textContent='RUN TERMINATED';$('#liveState').textContent='Collision detected';}
+    function setDir(x,y){if(!running||paused)return;if(x!==-dir.x||y!==-dir.y)nextDir={x,y}}
+    addEventListener('keydown',e=>{const m={ArrowUp:[0,-1],w:[0,-1],W:[0,-1],ArrowDown:[0,1],s:[0,1],S:[0,1],ArrowLeft:[-1,0],a:[-1,0],A:[-1,0],ArrowRight:[1,0],d:[1,0],D:[1,0]};if(m[e.key]){e.preventDefault();setDir(...m[e.key])}});
+    document.querySelectorAll('[data-dir]').forEach(b=>b.onclick=()=>{const d={up:[0,-1],down:[0,1],left:[-1,0],right:[1,0]}[b.dataset.dir];setDir(...d)});
+    $('#startBtn').onclick=start;$('#restartBtn').onclick=start;$('#nextBtn').onclick=proceed;reset();setInterval(()=>{if(!running)draw()},200);
+  </script>
+</body>
+</html>
